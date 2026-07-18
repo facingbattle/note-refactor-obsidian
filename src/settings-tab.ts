@@ -154,6 +154,30 @@ export class NoteRefactorSettingsTab extends PluginSettingTab {
     }
 
     new Setting(containerEl)
+      .setName('Use Templater template')
+      .setDesc('Create refactored/split notes using a Templater template file instead of the plain-text template above. Requires the Templater plugin to be installed and enabled.')
+      .addToggle(toggle => toggle.setValue(this.plugin.settings.useTemplaterTemplate)
+        .onChange((value) => {
+          this.plugin.settings.useTemplaterTemplate = value;
+          this.plugin.saveData(this.plugin.settings);
+          this.display();
+        }));
+
+    if (this.plugin.settings.useTemplaterTemplate) {
+      new Setting(containerEl)
+        .setName('Templater template file')
+        .setDesc('Path to the Templater template file to use when creating new notes (e.g. Templates/MyTemplate.md). Use the {{new_note_content}} placeholder in the template to control where the extracted content is inserted; otherwise it is appended to the end.')
+        .addText((text) =>
+          text
+            .setPlaceholder("Templates/MyTemplate.md")
+            .setValue(this.plugin.settings.templaterTemplateFile || '')
+            .onChange((value) => {
+              this.plugin.settings.templaterTemplateFile = value;
+              this.plugin.saveData(this.plugin.settings);
+            }));
+    }
+
+    new Setting(containerEl)
       .setName('Normalize heading levels')
       .setDesc('When content has been extracted/split into a new note, normalize the levels of the headings')
       .addToggle(toggle => toggle.setValue(this.plugin.settings.normalizeHeaderLevels)

@@ -28,10 +28,17 @@ export default class ModalNoteCreation {
     
       async create(fileName: string) : Promise<void> {
         fileName = this.file.sanitisedFileName(fileName);
-        const { currentFile } = this.getCurrentFile();
-        const filePath = await this.obsFile.createOrAppendFile(fileName, '');
-        const templatedContent = await this.templatedContent(this.content, currentFile, filePath, fileName);
-        await this.obsFile.createOrAppendFile(fileName, templatedContent)
+        const { currentView, currentFile } = this.getCurrentFile();
+        let filePath = this.settings.useTemplaterTemplate && this.settings.templaterTemplateFile
+          ? await this.obsFile.createNoteWithTemplater(fileName, this.obsFile.filePath(currentView), this.content)
+          : undefined;
+        let templatedContent = this.content;
+
+        if (!filePath) {
+          filePath = await this.obsFile.createOrAppendFile(fileName, '');
+          templatedContent = await this.templatedContent(this.content, currentFile, filePath, fileName);
+          await this.obsFile.createOrAppendFile(fileName, templatedContent)
+        }
         await this.doc.replaceContent(fileName, filePath, this.editor, currentFile, templatedContent, this.content, this.mode);
         if(this.settings.openNewNote){
           this.app.workspace.openLinkText(fileName, getLinkpath(filePath), true);

@@ -1,4 +1,4 @@
-import { App, Notice, Vault, normalizePath, TFile } from 'obsidian';
+import { App, Notice, Vault, normalizePath, TFile, TFolder } from 'obsidian';
 import { NoteRefactorSettings, Location } from './settings';
 import MomentDateRegex from './moment-date-regex'
 import NRFile from './file';
@@ -74,6 +74,61 @@ export default class ObsidianFile {
       await this.vault.adapter.write(filePath, existingContent + note);
     }
   
+    private getTemplaterPlugin(): any | null {
+      const templaterPlugin = (this.app as any).plugins?.plugins?.['templater-obsidian'];
+      if (templaterPlugin && templaterPlugin.templater) {
+        return templaterPlugin;
+      }
+      return null;
+    }
+
+    async createNoteWithTemplater(fileName: string, folderPath: string, content: string): Promise<string | undefined> {
+      if (!this.settings.useTemplaterTemplate || !this.settings.templaterTemplateFile) {
+        return undefined;
+      }
+      const templaterPlugin = this.getTemplaterPlugin();
+      if (!templaterPlugin) {
+        new Notice('Templater plugin is not installed or enabled. Falling back to default note creation.');
+        return undefined;
+      }
+      const templateFile = this.vault.getAbstractFileByPath(normalizePath(this.settings.templaterTemplateFile));
+      if (!templateFile || !(templateFile instanceof TFile)) {
+        new Notice(`Templater template file not found: ${this.settings.templaterTemplateFile}`);
+        return undefined;
+      }
+      try {
+        const folderExists = await this.vault.adapter.exists(folderPath, false);
+        if (!folderExists) {
+          await this.createFoldersFromVaultRoot('', folderPath.split('/'));
+        }
+        const folder = folderPath ? this.vault.getAbstractFileByPath(folderPath) : this.vault.getRoot();
+        const newFile: TFile = await templaterPlugin.templater.create_new_note_from_template(
+          templateFile,
+          folder instanceof TFolder ? folder : this.vault.getRoot(),
+          fileName,
+          false
+        );
+        if (!newFile) {
+          new Notice('Templater failed to create the new note.');
+          return undefined;
+        }
+        const existingContent = await this.vault.read(newFile);
+        let updatedContent: string;
+        if (existingContent.includes('{{new_note_content}}')) {
+          updatedContent = existingContent.replace('{{new_note_content}}', content);
+        } else {
+          const separator = existingContent.trim().length > 0 ? '\r\r' : '';
+          updatedContent = existingContent + separator + content;
+        }
+        await this.vault.modify(newFile, updatedContent);
+        return newFile.path;
+      } catch (error) {
+        console.error(error);
+        new Notice('Error creating note via Templater. Falling back to default note creation.');
+        return undefined;
+      }
+    }
+
     private async createFoldersFromVaultRoot(parentPath: string, folders: string[]): Promise<void> {
       if(folders.length === 0) {
         return;

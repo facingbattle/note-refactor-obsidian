@@ -12,6 +12,8 @@ export class NoteRefactorSettings {
     noteLinkTemplate: string = '';
     refactoredNoteTemplate: string = '';
     normalizeHeaderLevels: boolean = false;
+    useTemplaterTemplate: boolean = false;
+    templaterTemplateFile: string = '';
   }
   
 export enum Location {

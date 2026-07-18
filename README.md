@@ -149,6 +149,14 @@ The following placeholders are supported and will be replaced with dynamic value
 - `{{new_note_title}}` the title of the new note.
 - `{{new_note_content}}` the refactored content for the new note.
 
+### Use Templater Template
+
+This setting creates refactored/split notes using a [Templater](https://github.com/SilentVoid13/Templater) template file instead of the plain-text "Refactored Note Template" setting above. This requires the Templater plugin to be installed and enabled.
+
+When enabled, specify the path to a Templater template file in the "Templater template file" setting (e.g. `Templates/MyTemplate.md`). Note Refactor will ask Templater to create the new note from that template, running any Templater syntax (e.g. `<% tp.date.now() %>`, prompts, etc.) it contains.
+
+Use the `{{new_note_content}}` placeholder within the Templater template to control where the extracted content is inserted. If the placeholder is not present, the extracted content is appended to the end of the generated note.
+
 ### Normalize Heading Levels
 
 This setting normalizes the levels of the headings in an extracted note.
